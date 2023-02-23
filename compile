@@ -1,0 +1,4 @@
+#!/bin/sh
+
+g++ heat-eq.cpp -o heat-eq
+./heat-eq
