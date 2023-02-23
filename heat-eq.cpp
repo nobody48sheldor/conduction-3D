@@ -12,10 +12,10 @@ using namespace std;
 
 
 // general functions
-int write_data(vector<double> data, int n)
+int write_data(vector<double> data, int n, int index)
 {
   ofstream output_file;
-  output_file.open("data.txt");
+  output_file.open("data/data_" + to_string(index) + ".txt");
   for (int i=0; i < n*n*n; i++)
   {
     output_file << data[i] << '/';
@@ -102,7 +102,16 @@ double grad(vector<vector<vector<double>>> tau, int x, int y, int z, double dl)
 
 double tau_init_func(double x, double y, double z)
 {
-  double value = exp(- (x*x +y*y +z*z));
+  double value;
+  // value = 20*exp(- 0.2*(x*x +y*y +z*z));
+  if (x < 0)
+  {
+    value = 30+(-7/5)*x;
+  }
+  else
+  {
+    value = -7;
+  }
   return value;
 }
 
@@ -159,7 +168,6 @@ auto solve(vector<vector<vector<double>>> tau_ti, int size, double alpha, double
 
   for (int z=1; z<size-1; z++)
   {
-    cout << "z = " << z << endl;
     for (int y=1; y<size-1; y++)
     {
       for (int x=1; x<size-1; x++)
@@ -167,16 +175,13 @@ auto solve(vector<vector<vector<double>>> tau_ti, int size, double alpha, double
         value = tau_ti[z][y][x] + alpha*(grad(tau_ti, x ,y, z, dl))*dt;
         tau_t_next[z][y][x] = value;
       }
-      tau_t_next[z][y][size] = tau_t_next[z][y][size-1];
+      tau_t_next[z][y][size-1] = tau_t_next[z][y][size-2];
       tau_t_next[z][y][0] = tau_t_next[z][y][1];
     }
     tau_t_next[z][size-1] = tau_t_next[z][size-2];
     tau_t_next[z][0] = tau_t_next[z][1];
   }
-  cout << "here " << endl;
-  cout << size-1 << endl;
   tau_t_next[size-1] = tau_t_next[size-2];
-  cout << "here " << endl;
   tau_t_next[0] = tau_t_next[1];
   return tau_t_next;
 }
@@ -192,10 +197,10 @@ int main()
   // defining some values
   
   int n = 10;
-  int nt = 5000;
+  int nt = 2*n*n;
   double limite = 5;
   double tmax = 35;
-  double alpha = 1;
+  double alpha = 0.1;
 
 
   // making some of the initial variable
@@ -238,16 +243,21 @@ int main()
   // initial condition put into the first frame
 
   tau[0] = tau_initial;
+  write_data(linearized(tau[0],n),n, 0);
+    system("python3 plot-a-frame.py 0");
 
 
   // looping and making the next frame thanks to the previous one
 
   for (int t=1; t<nt; t++)
   {
-    cout << "t = " << t << endl << endl;
+    cout << "t = " << t << endl;
     tau[t%4] = solve(tau[(t-1)%4], n, alpha, dl, dt);
-    cout << "writting it up" << endl << endl;
-    write_data(linearized(tau[t%4], n), n);
+    write_data(linearized(tau[t%4], n), n, t);
+    string cmd;
+    cmd = "python3 plot-a-frame.py " + to_string(t);
+    const char *command = cmd.c_str();
+    system(command);
   }
 
   return 0;

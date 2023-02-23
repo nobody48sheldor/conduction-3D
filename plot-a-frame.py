@@ -1,49 +1,78 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from mpl_toolkits.mplot3d import axes3d
 from matplotlib import style
 from matplotlib import cm
-from mpl_toolkits.mplot3d import axes3d
-import time
+import sys
 
 style.use('dark_background')
 
-n = 10
+n=10
+
+index = int(sys.argv[1])
+
+print("plotting t =", index, "\n")
+
+
+
+L = np.linspace(-5, 5, n)
 
 X = []
 Y = []
+Z = []
+V = []
+W = []
 
-with open("data.txt", 'r') as file:
+for z in range(n):
+    for y in range(n):
+        for x in range(n):
+            X.append(L[x])
+            Y.append(L[y])
+            Z.append(L[z])
+            # V.append(function3D(L[x], L[y], L[z]))
+
+#print(len(X))
+#print(len(Y))
+#print(len(Z))
+
+with open("data/data_0.txt".format(index), 'r') as file:
     data = file.readlines()
 
-data = data[0].split("/",n*n)
 
-for i in range(len(data)-1):
-    data[i] = float(data[i])
+data = data[0].split("/",n*n*n)
+for i in data:
+    try:
+        W.append(float(i))
+    except:
+        None
 
-for y in range(n):
-    X = []
-    for x in range(n):
-        X.append(data[int(y*n + x)])
-    Y.append(X)
+maximum = max(W)
+minimum = min(W)
 
-array = np.array(Y)
-
-X = np.linspace(-5, 5, n)
-Y = np.linspace(-5, 5, n)
-
-x, y = np.meshgrid(X, Y)
+with open("data/data_{}.txt".format(index), 'r') as file:
+    data = file.readlines()
 
 
+data = data[0].split("/",n*n*n)
+for i in data:
+    try:
+        V.append(float(i))
+    except:
+        None
 
-#plt.savefig("{}".format(time))
 
-#plt.imshow(Y)
+#print(len(V))
+
 
 fig = plt.figure()
 plt.clf()
 ax = fig.add_subplot(111, projection = '3d')
 
-ax.plot_surface(x, y, array, cmap = cm.plasma, linewidth=0, antialiased=True)
+for i in range(n**3):
+    c = (V[i]+abs(minimum))/(maximum+abs(minimum))
+    if abs(c) > 1:
+        c = 0
+    ax.scatter3D(X[i],Y[i],Z[i], color = [c*0.99, 0, 1-(0.99*c)], alpha=0.5*c+0.1, s=50*c+20, linewidth=0, antialiased=True)
 
 ax.set_xlabel('x')
 ax.set_ylabel('y')
@@ -51,8 +80,8 @@ ax.set_zlabel('z')
 
 ax.axes.set_xlim3d(left=-5, right=5)
 ax.axes.set_ylim3d(bottom=-5, top=5)
-ax.axes.set_zlim3d(bottom=-1.2, top=1.2)
+ax.axes.set_zlim3d(bottom=-5, top=5)
 
-plt.title('Time = 0 secondes')
 
-plt.savefig("renders/{}.png".format(time.time()))
+plt.savefig("renders/render_{}.png".format(index))
+#plt.show()
