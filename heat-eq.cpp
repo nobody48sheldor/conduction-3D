@@ -100,6 +100,8 @@ double grad(vector<vector<vector<double>>> tau, int x, int y, int z, double dl)
 
 // inital conditions
 
+// function for the initial heat distribution
+
 double tau_init_func(double x, double y, double z)
 {
   double value;
@@ -116,7 +118,27 @@ double tau_init_func(double x, double y, double z)
 }
 
 
-auto tau_init(int size, vector<double> L)
+// function for the alpha coefficient
+
+double alpha_func(double x, double y, double z)
+{
+  double value;
+  // value = 20*exp(- 0.2*(x*x +y*y +z*z));
+  if (x < 0)
+  {
+    value = 0.21;
+  }
+  else
+  {
+    value = 20;
+  }
+  return value;
+}
+
+
+// making a 3D array with a "func" function
+
+auto array_3D(int size, vector<double> L, double (*func)(double, double, double))
 {
   vector<vector<vector<double>>> array;
   array.resize(size);
@@ -135,7 +157,7 @@ auto tau_init(int size, vector<double> L)
         double X = L[x];
         double Y = L[y];
         double Z = L[z];
-        array[z][y][x] = tau_init_func(X, Y, Z);
+        array[z][y][x] = func(X, Y, Z);
       }
     }
   }
@@ -148,7 +170,7 @@ auto tau_init(int size, vector<double> L)
 
 // solving function
 
-auto solve(vector<vector<vector<double>>> tau_ti, int size, double alpha, double dl, double dt)
+auto solve(vector<vector<vector<double>>> tau_ti, int size, vector<vector<vector<double>>> alpha, double dl, double dt)
 {
   vector<vector<vector<double>>> tau_t_next;
   tau_t_next.resize(size);
@@ -166,13 +188,15 @@ auto solve(vector<vector<vector<double>>> tau_ti, int size, double alpha, double
   }
 
 
+  // solving with numerical methods
+
   for (int z=1; z<size-1; z++)
   {
     for (int y=1; y<size-1; y++)
     {
       for (int x=1; x<size-1; x++)
       {
-        value = tau_ti[z][y][x] + alpha*(grad(tau_ti, x ,y, z, dl))*dt;
+        value = tau_ti[z][y][x] + alpha[z][y][x]*(grad(tau_ti, x ,y, z, dl))*dt;
         tau_t_next[z][y][x] = value;
       }
       tau_t_next[z][y][size-1] = tau_t_next[z][y][size-2];
@@ -196,11 +220,10 @@ int main()
 {
   // defining some values
   
-  int n = 10;
-  int nt = 2*n*n;
-  double limite = 5;
-  double tmax = 35;
-  double alpha = 0.1;
+  int n = 50;
+  int nt = 500;
+  double limite = 15;
+  double tmax = 60;
 
 
   // making some of the initial variable
@@ -210,10 +233,13 @@ int main()
   vector<double> T = linspace(0, tmax, nt);
   double dt = T[1] - T[0];
 
+
+  vector<vector<vector<double>>> alpha = array_3D(n,L,alpha_func);
+
   cout << "Making the initialisation ..." << endl << endl;
   cout << "   Calculating the initial values ..." << endl << endl;
 
-  vector<vector<vector<double>>> tau_initial = tau_init(n,L);
+  vector<vector<vector<double>>> tau_initial = array_3D(n,L,tau_init_func);
 
   cout << "       --> Done !"<< endl << endl << endl;
 
@@ -244,7 +270,7 @@ int main()
 
   tau[0] = tau_initial;
   write_data(linearized(tau[0],n),n, 0);
-    system("python3 plot-a-frame.py 0");
+    system("python3 plot-a-frame.py 0 &");
 
 
   // looping and making the next frame thanks to the previous one
@@ -255,9 +281,9 @@ int main()
     tau[t%4] = solve(tau[(t-1)%4], n, alpha, dl, dt);
     write_data(linearized(tau[t%4], n), n, t);
     string cmd;
-    cmd = "python3 plot-a-frame.py " + to_string(t);
+    cmd = "python3 plot-a-frame.py " + to_string(t) + " &";
     const char *command = cmd.c_str();
-    system(command);
+    //system(command);
   }
 
   return 0;

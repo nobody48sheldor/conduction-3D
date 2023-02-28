@@ -7,7 +7,7 @@ import sys
 
 style.use('dark_background')
 
-n=10
+n=25
 
 index = int(sys.argv[1])
 
@@ -60,6 +60,13 @@ for i in data:
     except:
         None
 
+if index == 0:
+    with open("res.txt",'w') as res:
+        res.write(str( V[ (int(n/2) - 1) * (n*n + n + 1)] ) + "\n")
+else:
+    with open("res.txt",'a') as res:
+        res.write(str( V[ int(n/2) * n*n + int(n/2)*n + int(n/2) - 1 ]) + "\n")
+
 
 #print(len(V))
 
@@ -72,7 +79,7 @@ for i in range(n**3):
     c = (V[i]+abs(minimum))/(maximum+abs(minimum))
     if abs(c) > 1:
         c = 0
-    ax.scatter3D(X[i],Y[i],Z[i], color = [c*0.99, 0, 1-(0.99*c)], alpha=0.5*c+0.1, s=50*c+20, linewidth=0, antialiased=True)
+    ax.scatter3D(X[i],Y[i],Z[i], color = [c*0.99, 0, 1-(0.99*c)], alpha=0.4*c+0.1, s=50*c+20, linewidth=0, antialiased=True)
 
 ax.set_xlabel('x')
 ax.set_ylabel('y')
@@ -84,4 +91,5 @@ ax.axes.set_zlim3d(bottom=-5, top=5)
 
 
 plt.savefig("renders/render_{}.png".format(index))
+
 #plt.show()
