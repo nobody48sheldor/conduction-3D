@@ -54,6 +54,23 @@ auto linspace(double l_0, double l_1, int n)
     return array;
 }
 
+double average(vector<vector<vector<double>>> array, int size)
+{
+  double avg = 0;
+
+  for (int z=0; z<size; z++)
+  {
+    for (int y=0; y<size; y++)
+    {
+      for (int x=0; x<size; x++)
+      {
+        avg += array[z][y][x];
+      }
+    }
+  } 
+  return avg/(size*size*size);
+}
+
 
 
 
@@ -95,6 +112,40 @@ double grad(vector<vector<vector<double>>> tau, int x, int y, int z, double dl)
 }
 
 
+// reduce size of array
+
+auto red_size(vector<vector<vector<double>>> array, int n)
+{
+  vector<vector<vector<double>>> arr_red;
+  //resizing
+  
+  arr_red.resize(n/2);
+  for (int z=0; z<(n/2); z++)
+  {
+    arr_red[z].resize(n/2);
+    for (int y=0; y<(n/2); y++)
+    {
+      arr_red[z][y].resize(n/2);
+    }
+  }
+
+  // making the average of 4 point of array to reduce its size
+
+
+  
+  for (int z=0; z<(n/2); z++)
+  {
+    for (int y=0; y<(n/2); y++)
+    {
+      for (int x=0; x<(n/2); x++)
+      {
+        arr_red[z][y][x] = (1.0/8.0) * (array[2*z][2*y][2*x] + array[2*z][2*y][2*x + 1] + array[2*z][2*y + 1][2*x + 1] + array[2*z][2*y + 1][2*x] + array[2*z + 1][2*y][2*x] + array[2*z + 1][2*y][2*x + 1] + array[2*z + 1][2*y + 1][2*x + 1] + array[2*z + 1][2*y + 1][2*x]);
+      }
+    }
+  }
+
+  return arr_red;
+}
 
 
 
@@ -108,11 +159,25 @@ double tau_init_func(double x, double y, double z)
   // value = 20*exp(- 0.2*(x*x +y*y +z*z));
   if (x < 0)
   {
-    value = 30+(-7/5)*x;
+    value = 30+(-7/200)*x;
   }
   else
   {
-    value = -7;
+    if (y*y + z*z < 100*100)
+    {
+      if (x < 100)
+      {
+        value = -7;
+      }
+      else
+      {
+        value = 20;
+      }
+    }
+    else
+    {
+      value = 20;
+    }
   }
   return value;
 }
@@ -126,11 +191,25 @@ double alpha_func(double x, double y, double z)
   // value = 20*exp(- 0.2*(x*x +y*y +z*z));
   if (x < 0)
   {
-    value = 0.21;
+    value = 12;
   }
   else
   {
-    value = 20;
+    if (y*y + z*z < 5*5)
+    {
+      if (x > 5)
+      {
+        value = 111;
+      }
+      else
+      {
+        value = 1.5;
+      }
+    }
+    else
+    {
+      value = 18.46;
+    }
   }
   return value;
 }
@@ -220,10 +299,10 @@ int main()
 {
   // defining some values
   
-  int n = 50;
-  int nt = 500;
-  double limite = 15;
-  double tmax = 60;
+  int n = 4*12;
+  int nt = 400;
+  double limite = 200;
+  double tmax = 50;
 
 
   // making some of the initial variable
@@ -240,7 +319,6 @@ int main()
   cout << "   Calculating the initial values ..." << endl << endl;
 
   vector<vector<vector<double>>> tau_initial = array_3D(n,L,tau_init_func);
-
   cout << "       --> Done !"<< endl << endl << endl;
 
   cout << "   fixing size of vectors <-- RAM expensive operation"<< endl << endl;
@@ -268,9 +346,25 @@ int main()
 
   // initial condition put into the first frame
 
+  vector<vector<vector<double>>> reduced;
+  reduced.resize(n/2);
+  for (int z=0; z<n/2; z++)
+  {
+    reduced[z].resize(n/2);
+    for (int y=0; y<n/2; y++)
+    {
+      reduced[z][y].resize(n/2);
+    }
+  }
+
+
   tau[0] = tau_initial;
-  write_data(linearized(tau[0],n),n, 0);
-    system("python3 plot-a-frame.py 0 &");
+  double avg = average(tau[0],n);
+  cout << "average = " << avg << endl;
+
+  reduced = red_size(tau[0],n);
+  write_data(linearized(red_size(reduced,n/2),n/4),n/4, 0);
+  system("python3 plot-a-frame.py 0");
 
 
   // looping and making the next frame thanks to the previous one
@@ -279,11 +373,14 @@ int main()
   {
     cout << "t = " << t << endl;
     tau[t%4] = solve(tau[(t-1)%4], n, alpha, dl, dt);
-    write_data(linearized(tau[t%4], n), n, t);
+    double avg = average(tau[t%4],n);
+    cout << "average = " << avg << endl;
+    reduced = red_size(tau[t%4], n);
+    write_data(linearized(red_size(reduced,n/2), n/4), n/4, t);
     string cmd;
     cmd = "python3 plot-a-frame.py " + to_string(t) + " &";
     const char *command = cmd.c_str();
-    //system(command);
+    system(command);
   }
 
   return 0;

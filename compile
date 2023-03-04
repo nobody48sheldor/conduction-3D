@@ -1,4 +1,11 @@
 #!/bin/sh
+echo compilling...
+echo
 
 g++ heat-eq.cpp -o heat-eq
+echo running...
+echo
+
 ./heat-eq
+
+

@@ -8,7 +8,6 @@ import sys
 style.use('dark_background')
 
 tmax = 60
-nt = 200
 
 
 with open("res.txt", 'r') as res:
@@ -19,6 +18,7 @@ for i in range(len(T)):
 
 t = np.linspace(0,tmax,len(T))
 
+plt.clf()
+plt.ylim([min(T)-0.1,max(T)+0.1])
 plt.plot(t,T)
-plt.show(
-    plt.show())
+plt.show()
