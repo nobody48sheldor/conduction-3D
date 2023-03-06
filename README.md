@@ -1,1 +1,0 @@
-# conduction-3D

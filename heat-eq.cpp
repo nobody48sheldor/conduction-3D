@@ -49,7 +49,7 @@ auto linspace(double l_0, double l_1, int n)
 
     for (int i = 0; i < n; i++)
     {
-        array[i] = l_0 + (i*(l_1 - l_0)/n);
+        array[i] = l_0 + (i*(l_1 - l_0)/(n-1));
     }
     return array;
 }
@@ -188,7 +188,6 @@ double tau_init_func(double x, double y, double z)
 double alpha_func(double x, double y, double z)
 {
   double value;
-  // value = 20*exp(- 0.2*(x*x +y*y +z*z));
   if (x < 0)
   {
     value = 12;
@@ -275,6 +274,7 @@ auto solve(vector<vector<vector<double>>> tau_ti, int size, vector<vector<vector
     {
       for (int x=1; x<size-1; x++)
       {
+        // value is being calculated with the forward method
         value = tau_ti[z][y][x] + alpha[z][y][x]*(grad(tau_ti, x ,y, z, dl))*dt;
         tau_t_next[z][y][x] = value;
       }
@@ -346,24 +346,11 @@ int main()
 
   // initial condition put into the first frame
 
-  vector<vector<vector<double>>> reduced;
-  reduced.resize(n/2);
-  for (int z=0; z<n/2; z++)
-  {
-    reduced[z].resize(n/2);
-    for (int y=0; y<n/2; y++)
-    {
-      reduced[z][y].resize(n/2);
-    }
-  }
-
-
   tau[0] = tau_initial;
   double avg = average(tau[0],n);
   cout << "average = " << avg << endl;
 
-  reduced = red_size(tau[0],n);
-  write_data(linearized(red_size(reduced,n/2),n/4),n/4, 0);
+  write_data(linearized(red_size(red_size(tau[0],n),n/2),n/4),n/4, 0);
   system("python3 plot-a-frame.py 0");
 
 
@@ -375,8 +362,7 @@ int main()
     tau[t%4] = solve(tau[(t-1)%4], n, alpha, dl, dt);
     double avg = average(tau[t%4],n);
     cout << "average = " << avg << endl;
-    reduced = red_size(tau[t%4], n);
-    write_data(linearized(red_size(reduced,n/2), n/4), n/4, t);
+    write_data(linearized(red_size(red_size(tau[t%4],n),n/2), n/4), n/4, t);
     string cmd;
     cmd = "python3 plot-a-frame.py " + to_string(t) + " &";
     const char *command = cmd.c_str();
